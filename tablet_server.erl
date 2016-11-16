@@ -7,10 +7,12 @@
 % InactiveDictFilename = "lsadkjflkajf.txt".
 
 % TODO figure out if this needs anything
-start_server() -> spawn(fun () -> loop(dict:new(), dict:new(), 0)  end).
+start_server() -> 
+	ActivePid = spawn(fun () -> active_loop(dict:new(), dict:new(), 0)  end),
+	InactivePid = spawn(fun () -> inactive_loop() end),
+	spawn(fun () -> loop(ActivePid, InactivePid) end).
 
-% % Tablet server loop
-loop(ActiveDict, DiskActiveDict, CurrentReaders) ->
+active_loop(ActiveDict, DiskActiveDict, CurrentReaders) ->
 	receive
 		{queryR, Function} ->
 			This = self(),
@@ -18,33 +20,69 @@ loop(ActiveDict, DiskActiveDict, CurrentReaders) ->
 						dict:map(Function, ActiveDict),
 						This ! done_reading
 					end),
-			loop(ActiveDict, DiskActiveDict, CurrentReaders + 1);
+			active_loop(ActiveDict, DiskActiveDict, CurrentReaders + 1);
 		% Function has type (Key, Value) -> Value
 		{queryW, Function} ->
 			_ = wait_for_readers(CurrentReaders),
 			NewActiveDict = dict:map(Function, ActiveDict),
-			loop(NewActiveDict, DiskActiveDict, 0);
-		{addInactiveRow, Key, Value} -> laod_inactives_dict_from_disk, add_this_row, write_back_to_disk;
+			active_loop(NewActiveDict, DiskActiveDict, 0);
 		{addActiveRow, Key, Value} -> 
 			NewActiveDict = dict:append(Key, Value, ActiveDict),
 			io:write(dict:to_list(NewActiveDict)),
-			loop(NewActiveDict, DiskActiveDict, CurrentReaders);
-		{deleteInactiveRow, Key} -> todo;
-		{deleteRow, Key} ->
-			NewActiveDict = dict:erase(Key, ActiveDict),
-			loop(NewActiveDict, DiskActiveDict, CurrentReaders);
-		{updateRowValue, Key, Value} -> todo;
-		{updateRowActive, Key, Active} -> todo
+			active_loop(NewActiveDict, DiskActiveDict, CurrentReaders);
+		% {deleteRow, Key} ->
+		% 	NewActiveDict = dict:erase(Key, ActiveDict),
+		% 	active_loop(NewActiveDict, DiskActiveDict, CurrentReaders);
+		{quit} -> ok
 	after
 		% this refresh timer is redundant
 		5000 ->
 			case ActiveDict of
-				DiskActiveDict -> loop(DiskActiveDict, DiskActiveDict, CurrentReaders);
+				DiskActiveDict -> active_loop(DiskActiveDict, DiskActiveDict, CurrentReaders);
 				_ ->
 					% write(ActiveDict, ActiveDictFilename),
-					loop(ActiveDict, ActiveDict, CurrentReaders)
+					active_loop(ActiveDict, ActiveDict, CurrentReaders)
 			end
 	end.
+
+% % Tablet server loop
+inactive_loop() ->
+	receive
+		{addInactiveRow, Key, Value} -> laod_inactives_dict_from_disk, add_this_row, write_back_to_disk;
+		% {addActiveRow, Key, Value} -> 
+		% 	NewActiveDict = dict:append(Key, Value, ActiveDict),
+		% 	io:write(dict:to_list(NewActiveDict)),
+		% 	loop(NewActiveDict, DiskActiveDict, CurrentReaders);
+		{deleteInactiveRow, Key} -> todo;
+		% {deleteRow, Key} ->
+		% 	NewActiveDict = dict:erase(Key, ActiveDict),
+		% 	loop(NewActiveDict, DiskActiveDict, CurrentReaders);
+		{updateRowValue, Key, Value} -> todo;
+		{updateRowActive, Key, Active} -> todo
+	% after
+	% 	% this refresh timer is redundant
+	% 	5000 ->
+	% 		case ActiveDict of
+	% 			DiskActiveDict -> loop(DiskActiveDict, DiskActiveDict, CurrentReaders);
+	% 			_ ->
+	% 				% write(ActiveDict, ActiveDictFilename),
+	% 				loop(ActiveDict, ActiveDict, CurrentReaders)
+	% 		end
+	end.
+
+% % Tablet server loop
+loop(ActivePid, InactivePid) ->
+	receive
+		{queryR, Function} -> ActivePid ! {queryR, Function};
+		{queryW, Function} -> ActivePid ! {queryW, Function};
+		{addInactiveRow, Key, Value} -> InactivePid ! {addInactiveRow, Key, Value};
+		{addActiveRow, Key, Value} -> ActivePid ! {addActiveRow, Key, Value};
+		{deleteInactiveRow, Key} -> InactivePid ! {deleteInactiveRow, Key};
+		% {deleteRow, Key} -> 
+		{updateRowValue, Key, Value} -> InactivePid ! {updateRowValue, Key, Value};
+		{updateRowActive, Key, Active} -> InactivePid ! {updateRowActive, Key, Active}
+	end,
+	loop(ActivePid, InactivePid).
 
 wait_for_readers(0) -> ok;
 wait_for_readers(N) ->
