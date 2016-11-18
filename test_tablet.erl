@@ -5,8 +5,8 @@ This = self().
 
 Pid ! {addActiveRow, "Hello", "world"}.
 Pid ! {queryW, fun(Key, Value) -> "world2" end}.
-Pid ! {queryR, fun(Key, Value) -> This ! {read, Key} , Key end}.
-receive {read, Key} -> io:write(Key), yup end.
+Pid ! {queryR, fun(Key, Value) -> This ! {read, {Key, Value}} , Key end}.
+receive {read, {Key, Value}} -> io:format("~s", [Value]), yup end.
 
 
 

@@ -22,4 +22,8 @@ ets:from_dets(Table, DiskTable).
 
 ets:lookup(Table, "Hello").
 
+ets:tab2list(Table).
 
+ets:insert(Table, {"Another", "Key"}).
+
+ets:tab2list(Table).
