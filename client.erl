@@ -39,7 +39,7 @@ send_queryR_message([H|T],Function) ->
 %works
 send_add_row_message(Tablet_list,Key,Value) ->
 	TabletListLength = length(Tablet_list),
-	Index = rand:uniform(TabletListLength),
+	Index = rand:uniform(TabletListLength) - 1,
 	Tablet = lists:nth(Index,Tablet_list),
 	Tablet ! {addActiverow, Key,Value}.
 
