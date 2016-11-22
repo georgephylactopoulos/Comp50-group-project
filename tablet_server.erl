@@ -36,7 +36,7 @@ loop(ActiveTableMem, ActiveTableDisk, InactiveTable, CurrentReaders) ->
 		{addInactiveRow, Key, Value} -> dets:insert(InactiveTable, {Key, Value}), Loop(CurrentReaders);
 		{addActiveRow, Key, Value} ->
 			_ = wait_for_readers(CurrentReaders),
-			ets:insert(ActiveTableMem, [{Key, Value}]), 
+			ets:insert(ActiveTableMem, [{Key, Value}]),
 			Loop(CurrentReaders);
 		{deleteInactiveRow, Key} ->
 			spawn(fun() ->  dets:delete(InactiveTable, Key) end), Loop(CurrentReaders);

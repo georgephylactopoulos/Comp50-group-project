@@ -12,8 +12,17 @@ Master = masterserver:start(master_registered_name).
 Client = client:start(client_name, master_registered_name, node()).
 
 Master ! {add_tablet, Tablet1}.
+Master ! {add_tablet, Tablet2}.
+Master ! {update_clients}.
 
-Client ! {add_row, "Hello", "World"}.
+Input = [{"Hello", "World"}, {"Hello2", "World2"}, {"Hell3", "Worl3"}].
+
+% Add several rows
+lists:map(fun({Key, Value}) -> Client ! {add_row, Key, Value} end, Input).
+
+% Client ! {add_row, "Hello", "World"}.
+
+% Tablet1 ! {addActiveRow, "Hello", "World"}.
 
 This = self().
 
