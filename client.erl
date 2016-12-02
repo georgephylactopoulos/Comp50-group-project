@@ -1,5 +1,5 @@
 -module(client).
--export([start/3,loop/3,add_row/3,make_queryW/2,make_queryR/2]).
+-export([start/3,loop/3,add_row/3,make_queryW/2,make_queryR/2,subscribe_to_the_master/3,unsubscribe_from_the_master/3]).
 
 %TODO:
 %convert to oTP gen server
@@ -47,13 +47,16 @@ send_add_row_message(Tablet_list,Key,Value) ->
 subscribe_to_the_master(Master_Registered_Name, Master_Node,Loop_process_name) -> 
 	{Master_Registered_Name,Master_Node} ! {subscribe,{Loop_process_name,node()}}.
 
-%I make the assumption that whenever a tablet changes in
-%the cluster, the master server sends back a new altered 
-%full list.
-loop([], Master_Name, Master_Node) ->
-	receive
-		{tablet_list_update, NewList} ->  loop(NewList,Master_Name,Master_Node)
-	end;
+unsubscribe_from_the_master(Master_Registered_Name, Master_Node,Loop_process_name) -> 
+	{Master_Registered_Name,Master_Node} ! {unsubscribe,{Loop_process_name,node()}}.
+
+% %I make the assumption that whenever a tablet changes in
+% %the cluster, the master server sends back a new altered 
+% %full list.
+% loop([], Master_Name, Master_Node) ->
+% 	receive
+% 		{tablet_list_update, NewList} ->  loop(NewList,Master_Name,Master_Node)
+% 	end;
 
 loop(Tablet_list, Master_Name,Master_Node) -> 
 	receive
