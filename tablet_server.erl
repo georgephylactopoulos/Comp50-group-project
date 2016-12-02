@@ -7,13 +7,16 @@
 % InactiveDictFilename = "lsadkjflkajf.txt".
 
 % TODO figure out if this needs anything
-start_server() ->
-	spawn(fun () -> 
-		ActiveTableMem = ets:new(active_table_mem, [{write_concurrency, true}, {read_concurrency, true}, public]),
-		{ok, ActiveTableDisk} = dets:open_file(active_table_disk, []),
-		ets:from_dets(ActiveTableMem, ActiveTableDisk),
-		{ok, InactiveTable} = dets:open_file(inactive_table_disk, []),
-		loop(ActiveTableMem, ActiveTableDisk, InactiveTable, 0)  end).
+start_server(TabletName) ->
+	Pid = spawn(fun () -> 
+		        ActiveTableMem = ets:new(active_table_mem, [{write_concurrency, true}, {read_concurrency, true}, public]),
+		        {ok, ActiveTableDisk} = dets:open_file(active_table_disk, []),
+	        	ets:from_dets(ActiveTableMem, ActiveTableDisk),
+		        {ok, InactiveTable} = dets:open_file(inactive_table_disk, []),
+		        loop(ActiveTableMem, ActiveTableDisk, InactiveTable, 0)  end),
+	register(TabletName,Pid),
+	Pid.
+
 
 % % Tablet server loop
 loop(ActiveTableMem, ActiveTableDisk, InactiveTable, CurrentReaders) ->
@@ -53,9 +56,9 @@ loop(ActiveTableMem, ActiveTableDisk, InactiveTable, CurrentReaders) ->
 			dets:insert(InactiveTable, ets:lookup(ActiveTableMem, Key)),
 			ets:delete(ActiveTableMem, Key),
 			Loop(CurrentReaders)
-	after
+	%after
 		% this refresh timer is redundant
-		5000 -> todo
+	%	5000 -> todo
 			% case ActiveDict of
 			% 	DiskActiveDict -> loop(DiskActiveDict, DiskActiveDict, CurrentReaders);
 			% 	_ ->
