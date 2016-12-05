@@ -7,14 +7,13 @@
 % InactiveDictFilename = "lsadkjflkajf.txt".
 
 % TODO figure out if this needs anything
-start_server(TabletName) ->
+start_server() ->
 	Pid = spawn(fun () -> 
 		        ActiveTableMem = ets:new(active_table_mem, [{write_concurrency, true}, {read_concurrency, true}, public]),
 		        {ok, ActiveTableDisk} = dets:open_file(active_table_disk, []),
 	        	ets:from_dets(ActiveTableMem, ActiveTableDisk),
 		        {ok, InactiveTable} = dets:open_file(inactive_table_disk, []),
 		        loop(ActiveTableMem, ActiveTableDisk, InactiveTable, 0)  end),
-	register(TabletName,Pid),
 	Pid.
 
 
