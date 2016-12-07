@@ -1,5 +1,5 @@
 c(master_server).
-{ok, Master} = master_server:start().
+Master = master_server:start(name).
 
 Pid1 = spawn(fun () -> fake_tablet end).
 Pid2 = spawn(fun () -> fake_tablet end).
