@@ -30,6 +30,10 @@ print_tablet_list(Pid) ->
 
 init(_) -> {ok, []}.
 
+handle_cast({is_down,Tablet}, Tablets) ->
+	NewList = lists:delete(Tablet, Tablets),
+	{noreply, NewList};
+
 handle_cast({add_tablet, Tablet}, Tablets) ->
 	{noreply, [Tablet | Tablets]};
 
