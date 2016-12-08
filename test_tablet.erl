@@ -27,6 +27,7 @@ gen_server:call(T, {has_active_row, "AnotherKey"}).
 gen_server:call(T, {get_all_inactive_rows}).
 
 
+tablet_server:stop(T).
 
 
 % riak - nosql in erlang (basho)

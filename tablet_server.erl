@@ -50,8 +50,10 @@ handle_cast(Request, State) ->
 					dets:insert(InactiveTable, Pair),
 					dets:delete(ActiveTable, Key);
 				_ -> ok
-			end
-
+			end;
+		{clear_everything} ->
+			dets:delete_all_objects(ActiveTable),
+			dets:delete_all_objects(InactiveTable)
 	end,
 	{noreply, State}.
 
@@ -89,7 +91,7 @@ handle_call(Request, From, State) ->
 			HasKey = dets:member(ActiveTable, Key),
 			{reply, HasKey, State};
 		{has_inactive_row, Key} ->
-			HasKey = dets:member(ActiveTable, Key) or dets:member(InactiveTable, Key),
+			HasKey = dets:member(InactiveTable, Key),
 			{reply, HasKey, State}
 	end.
 
