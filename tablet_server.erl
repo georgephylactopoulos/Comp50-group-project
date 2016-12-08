@@ -1,13 +1,15 @@
 
 -module(tablet_server).
 
--export([start/0, stop/1]).
--export([init/1, handle_call/3, handle_cast/2]).
+-export([start/1, stop/1]).
+-export([init/1, handle_call/3, handle_cast/2, terminate/2]).
 
 % TODO this needs a unique name (because of the dets file names)
-start() ->
-	{ok, ActiveTable} = dets:open_file(active_table, []),
-	{ok, InactiveTable} = dets:open_file(inactive_table_disk, []),
+start(UniqueName) ->
+	ActiveTableName = list_to_atom(atom_to_list(UniqueName) ++ atom_to_list('_active_table')),
+	InactiveTableName = list_to_atom(atom_to_list(UniqueName) ++ atom_to_list('_inactive_table')),
+	{ok, ActiveTable} = dets:open_file(ActiveTableName, []),
+	{ok, InactiveTable} = dets:open_file(InactiveTableName, []),
 	gen_server:start(tablet_server, {ActiveTable,  InactiveTable}, []).
 
 stop(Pid) ->
@@ -62,6 +64,12 @@ handle_call(Request, From, State) ->
 				[Pair | _] -> {reply, Pair, State};
 				_ -> {reply, no_match, State}
 			end;
+		{get_inactive_row, Key} ->
+			Match = dets:lookup(InactiveTable, Key),
+			case Match of
+				[Pair | _] -> {reply, Pair, State};
+				_ -> {reply, no_match, State}
+			end;
 		{filter, Function} ->
 			Result =
 				dets:foldl(fun(Pair, Acc) ->
@@ -72,9 +80,15 @@ handle_call(Request, From, State) ->
 							end, [], ActiveTable),
 			{reply, Result, State};
 		{get_all_active_rows} ->
-			Keys = dets:foldl(fun(Pair, Acc) -> [Pair | Acc] end, [], ActiveTable),
+			Keys = dets:foldl(fun({Key, Val}, Acc) -> [Key | Acc] end, [], ActiveTable),
 			{reply, Keys, State};
-		{has_row, Key} ->
+		{get_all_inactive_rows} ->
+			InactiveKeys = dets:foldl(fun({Key, Val}, Acc) -> [Key | Acc] end, [], InactiveTable),
+			{reply, InactiveKeys, State};
+		{has_active_row, Key} ->
+			HasKey = dets:member(ActiveTable, Key),
+			{reply, HasKey, State};
+		{has_inactive_row, Key} ->
 			HasKey = dets:member(ActiveTable, Key) or dets:member(InactiveTable, Key),
 			{reply, HasKey, State}
 	end.
