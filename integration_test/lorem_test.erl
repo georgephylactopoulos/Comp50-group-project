@@ -3,7 +3,6 @@ M = master_server:find_master(master@localhost, master).
 
 {ok, Text} = file:read_file("integration_test/lorem.txt").
 Words = string:tokens(binary_to_list(Text), " ").
-% Words = string:tokens("Hello world", " ").
 
 Fun = fun(Fun, Words, I) ->
 	case Words of
