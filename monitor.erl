@@ -7,8 +7,8 @@ start(Refresh_rate, MasterPid) ->
 	Pid.
 
 
-% Function adds monitors to any tablets that were are not in the list of monitored
-% tablets
+% Function adds monitors to any tablets that were are not in the list of
+% monitored tablets
 ensure_all_tablets_are_monitored([], _Monitored_Tablets) -> ok;
 ensure_all_tablets_are_monitored([H|T], Monitored_Tablets) ->
 	tablet_is_already_monitored(lists:member(H, Monitored_Tablets), H),
