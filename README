@@ -1,0 +1,49 @@
+
+# Files
+
+compile.erl - compiles the modules
+util.erl - parallel_map and parallel_filter
+
+client.erl - client functions module for querying the database
+master.erl - master server that keeps track of the tablets
+monitor.erl - monitor server that monitors tablets
+health_check.erl - function that ensure s the health of the tablet servers
+tablet_server.erl - tablet servers that hold the data and backups
+
+Each of these scripts start up their corresponding servers
+See integration_test/run_lorem_test.sh for usage examples
+
+start_client.erl
+start_master.erl
+start_monitor.erl
+start_health_check.erl
+start_tablet.erl
+
+try_ideas - just some scratch code
+unit_tests - tests each component individually
+integration_tests - code for lorem_test and potter_test
+
+# Starting up the database
+
+erl < start_master.erl -name master_node_name -master_name master_name
+		-setcookie cookie
+erl < start_monitor.erl -sname monitor_node_name -master_node master_node_name
+		-master_name master_name -refresh_rate refresh_rate_goes_here
+		-setcookie cookie
+erl < start_health_check.erl -sname health_node_name -master_node
+		master_node_name -master_name master_name -refresh_rate
+		refresh_rate_goes_here -copies number_copies_goes_here
+		-setcookie cookie
+erl < start_tablet.erl -sname tablet_node_name -master_node master_node_name
+		-master_name master_name -tablet_name tablet_name -setcookie cookie
+
+
+
+
+# Run unit / integration tests
+
+erl < unit_test/name_of_unit_test_goes_here.erl
+
+sh integration_test/run_lorem_test.sh
+sh integration_test/run_potter_test.sh
+
