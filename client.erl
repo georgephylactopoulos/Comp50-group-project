@@ -2,6 +2,7 @@
 -export([add_row/3,send_add_row_message/3,delete_row/2,
 	update_row/3,get_row/2,filter/2]).
 
+send_add_row_message([],Key,Value) -> no_tablets;
 send_add_row_message(Tablets,Key,Value) ->
 	TabletListLength = length(Tablets),
 	Index = rand:uniform(TabletListLength),
@@ -10,7 +11,7 @@ send_add_row_message(Tablets,Key,Value) ->
 
 add_row(MasterServerPid,Key,Value) ->
 	Tablets = gen_server:call(MasterServerPid,{get_tablets}),
-	send_add_row_message(Tablet, Key, Value).
+	send_add_row_message(Tablets, Key, Value).
 
 delete_row(MasterServerPid,Key) ->
     Tablets = gen_server:call(MasterServerPid,{get_tablets}),
@@ -26,11 +27,11 @@ update_row(MasterServerPid,Key,Value) ->
 
 get_row(MasterServerPid, Key) ->
 	Tablets = gen_server:call(MasterServerPid,{get_tablets}),
-	util:parallel_map(fun(T) ->
-		Results = gen_server:call(T, {update_row, Key, Value}),
-		case Results of
-			{no_match} -> [];
-			_ -> [Results]
+	Results = util:parallel_map(fun(T) ->
+		Result = gen_server:call(T, {get_row, Key}),
+		case Result of
+			no_match -> [];
+			_ -> [Result]
 		end
 	end, Tablets),
 	case lists:merge(Results) of
@@ -39,8 +40,8 @@ get_row(MasterServerPid, Key) ->
 	end.
 
 filter(Master, Function) ->
-	Tablets = gen_server:call(MasterServerPid,{get_tablets}),
-	Resuls = util:parallel_map(fun(T)) ->
+	Tablets = gen_server:call(Master,{get_tablets}),
+	Results = util:parallel_map(fun(T) ->
 		Result = gen_server:call(T, {filter, Function})
 	end, Tablets),
 	lists:merge(Results).
