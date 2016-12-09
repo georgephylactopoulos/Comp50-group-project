@@ -18,32 +18,35 @@ Fun = fun(Fun, Words, I) ->
 	end
 end.
 
-io:format("Start load entire book ~n").
+io:format("Start load entire text ~n").
 
 Fun(Fun, Words, 1).
 
-io:format("End load entire book ~n").
+io:format("End load entire text ~n").
 
 io:format("Count the number of instances of 'lorem' ~n").
 
-length(client:filter(M, fun({Key, Value}) -> Value == "lorem" end)).
+Instances1 = client:filter(M, fun({Key, Value}) -> Value == "lorem" end).
 
-io:format("Sleep for 8 seconds, kill the first two tablets, and then Sleep for 8 seconds").
+length(Instances1).
 
-timer:sleep(1000 * 8).
+io:format("Sleep for 3 seconds, kill the first two tablets, and then Sleep for 3 seconds").
+
+timer:sleep(1000 * 3).
 
 [T1 | [T2 | _]] = gen_server:call(M, {get_tablets}).
 
 exit(T1, some_reason).
 exit(T2, some_reason).
 
-timer:sleep(1000 * 8).
+timer:sleep(1000 * 3).
 
 gen_server:call(M, {get_tablets}).
 
 
 io:format("Count the number of instances of 'lorem' ~n").
 
-length(client:filter(M, fun({Key, Value}) -> Value == "lorem" end)).
+Instances2 = client:filter(M, fun({Key, Value}) -> Value == "lorem" end).
 
+length(Instances2).
 
