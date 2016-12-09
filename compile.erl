@@ -1,3 +1,5 @@
+% Compile everything
+
 c(util).
 c(master_server).
 c(tablet_server).

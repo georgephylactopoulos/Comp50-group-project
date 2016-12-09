@@ -58,7 +58,7 @@ handle_cast(Request, State) ->
 	end,
 	{noreply, State}.
 
-handle_call(Request, From, State) ->
+handle_call(Request, _From, State) ->
 	{ActiveTable, InactiveTable} = State,
 	case Request of 
 		{get_row, Key} ->
@@ -83,10 +83,10 @@ handle_call(Request, From, State) ->
 							end, [], ActiveTable),
 			{reply, Result, State};
 		{get_all_active_rows} ->
-			Keys = dets:foldl(fun({Key, Val}, Acc) -> [Key | Acc] end, [], ActiveTable),
+			Keys = dets:foldl(fun({Key, _}, Acc) -> [Key | Acc] end, [], ActiveTable),
 			{reply, Keys, State};
 		{get_all_inactive_rows} ->
-			InactiveKeys = dets:foldl(fun({Key, Val}, Acc) -> [Key | Acc] end, [], InactiveTable),
+			InactiveKeys = dets:foldl(fun({Key, _}, Acc) -> [Key | Acc] end, [], InactiveTable),
 			{reply, InactiveKeys, State};
 		{has_active_row, Key} ->
 			HasKey = dets:member(ActiveTable, Key),

@@ -1,7 +1,14 @@
 
+
+
 -module(health_check).
 
 -export([run/2]).
+
+% The function health_check:run(Master, Copies) checks
+% to ensure that the database has Copies number of copies
+% of each row, 1 active copy and Copies-1 inactive copies
+% and that they all have the same value.
 
 run(Master, Copies) ->
 	io:format("Starting health check...~n"),
@@ -12,20 +19,6 @@ run(Master, Copies) ->
 
 
 % Helpers
-
-% find_problems: {AllTablets, Tablet} -> [Problem]
-% find_problems_key: {AllTablets, Key} -> Problem
-% propose_action: {AllTablets, Problem} -> Action
-% do_action: {AllTablets, Action} -> ok.
-
-% find_problems |> solve_problem
-
-% Data structures
-
-% Problem = {no_active_copy, Key, TabletsWhichHaveIt}
-		% | {too_many_active_copies, Key, TabletsWhichHaveActiveCopies}
-		% | {not_enough_copies, Key, Value, TabletsWhichHaveIt, TabletWithActiveCopy}
-		% | {inconsistent_values, Key, Value, TabletsWhichHaveIt}
 
 find_problems(AllTablets, TargetCopies) ->
 	lists:map(fun (T) -> find_problems_with_tablet(AllTablets, TargetCopies, T) end, AllTablets).
@@ -77,22 +70,22 @@ find_problems_with_inactive_key(AllTablets, Key) ->
 		_ -> []
 	end.
 
-solve_problems(Tablets, Copies, Problems) ->
-	lists:map(fun(Problem) -> solve_problem(Tablets, Copies, Problem) end, Problems).
+solve_problems(AllTablets, Copies, Problems) ->
+	lists:map(fun(Problem) -> solve_problem(AllTablets, Copies, Problem) end, Problems).
 
-solve_problem(Tablets, Copies, {inconsistent_values, Key, Value, TabletsWithRow}) ->
+solve_problem(_AllTablets, _Copies, {inconsistent_values, Key, Value, TabletsWithRow}) ->
 	io:format("Updating values for Key: ~p Value: ~p ~n", [Key, Value]),
 	lists:map(fun(T) -> gen_server:cast(T, {update_row, Key, Value}) end, TabletsWithRow);
-solve_problem(Tablets, Copies, {too_many_active_copies, Key, TabletsWithActive}) ->
+solve_problem(_AllTablets, _Copies, {too_many_active_copies, Key, TabletsWithActive}) ->
 	[_ | Rest] = TabletsWithActive,
 	io:format("Deleting active row with Key: ~p from Tablets: ~p ~n", [Key, Rest]),
 	lists:map(fun (T) -> gen_server:cast(T, {delete_row, Key}) end, Rest);
-solve_problem(Tablets, Copies, {no_active_copy, Key, TabletsWithInactive}) ->
+solve_problem(_AllTablets, _Copies, {no_active_copy, Key, TabletsWithInactive}) ->
 	[First | _] = TabletsWithInactive,
 	io:format("Making row: ~p active on tablet:~p~n", [Key, First]),
 	gen_server:cast(First, {make_row_active, Key});
-solve_problem(Tablets, Copies, {not_enough_copies, Key, Value, TabletsWithRow}) ->
-	TabletsWithoutRow = sets:to_list(sets:subtract(sets:from_list(Tablets), sets:from_list(TabletsWithRow))),
+solve_problem(AllTablets, Copies, {not_enough_copies, Key, Value, TabletsWithRow}) ->
+	TabletsWithoutRow = sets:to_list(sets:subtract(sets:from_list(AllTablets), sets:from_list(TabletsWithRow))),
 	TabletsToAdd = lists:sublist(TabletsWithoutRow, Copies - length(TabletsWithRow)),
 	io:format("Adding inactive copies of row: ~p on tablets: ~p ~n", [Key, TabletsToAdd]),
 	lists:foreach(fun (T) -> gen_server:cast(T, {add_inactive_row, Key, Value}) end, TabletsToAdd).
