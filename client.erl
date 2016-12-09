@@ -1,76 +1,46 @@
 -module(client).
--export([start/3,loop/3,add_row/3,make_queryW/2,make_queryR/2,subscribe_to_the_master/3,unsubscribe_from_the_master/3]).
+-export([add_row/3,send_add_row_message/3,delete_row/2,
+	update_row/3,get_row/2,filter/2]).
 
-%TODO:
-%convert to oTP gen server
-%fake name server process 
-%delete row function?
-
-%dets
-%riak (distributed no sequel databse engines)
-
-%do reading on readig/writing from Disk (big vs small file)
-
-start(Name, Master_Registered_Name, Master_Node) ->
-	Pid = spawn(client,loop,[[], Master_Registered_Name, Master_Node]),
-	register(Name,Pid),
-	subscribe_to_the_master(Master_Registered_Name, Master_Node, Name),
-	Pid.
-
-add_row(Loop_process_name,Key,Value) -> 
-	{Loop_process_name,node()} ! {add_row, Key, Value}.
-
-make_queryW(Loop_process_name,Function) -> 
-	{Loop_process_name,node()} ! {queryW, Function}.
-
-send_queryW_message([], _Function) -> 'queryW made';
-send_queryW_message([H|T],Function) -> 
-	H ! {queryW,Function},
-	send_queryW_message(T,Function).
-
-make_queryR(Loop_process_name,Function) -> 
-	{Loop_process_name,node()} ! {queryR, Function}.
-
-send_queryR_message([], _Function) -> 'queryR made';
-send_queryR_message([H|T],Function) -> 
-	H ! {queryR,Function},
-	send_queryR_message(T,Function).
-
-%works
-send_add_row_message(Tablet_list,Key,Value) ->
-	TabletListLength = length(Tablet_list),
+send_add_row_message(Tablets,Key,Value) ->
+	TabletListLength = length(Tablets),
 	Index = rand:uniform(TabletListLength),
-	Tablet = lists:nth(Index,Tablet_list),
-	Tablet ! {addActiveRow, Key,Value}.
+	Tablet = lists:nth(Index,Tablets),
+	gen_server:cast(Tablet,{add_row, Key,Value}).
 
-%works
-subscribe_to_the_master(Master_Registered_Name, Master_Node,Loop_process_name) -> 
-	{Master_Registered_Name,Master_Node} ! {subscribe,{Loop_process_name,node()}}.
+add_row(MasterServerPid,Key,Value) ->
+	Tablets = gen_server:call(MasterServerPid,{get_tablets}),
+	send_add_row_message(Tablet, Key, Value).
 
-unsubscribe_from_the_master(Master_Registered_Name, Master_Node,Loop_process_name) -> 
-	{Master_Registered_Name,Master_Node} ! {unsubscribe,{Loop_process_name,node()}}.
+delete_row(MasterServerPid,Key) ->
+    Tablets = gen_server:call(MasterServerPid,{get_tablets}),
+	util:parallel_map(fun(T) ->
+		gen_server:cast(T, {delete_row, Key})
+	end, Tablets).
 
-% %I make the assumption that whenever a tablet changes in
-% %the cluster, the master server sends back a new altered 
-% %full list.
-% loop([], Master_Name, Master_Node) ->
-% 	receive
-% 		{tablet_list_update, NewList} ->  loop(NewList,Master_Name,Master_Node)
-% 	end;
+update_row(MasterServerPid,Key,Value) ->
+	Tablets = gen_server:call(MasterServerPid,{get_tablets}),
+	util:parallel_map(fun(T) ->
+		gen_server:cast(T, {update_row, Key, Value})
+	end, Tablets).
 
-loop(Tablet_list, Master_Name,Master_Node) -> 
-	receive
-		{tablet_list_update, NewList} ->  loop(NewList,Master_Name,Master_Node);
-		{add_row, Key, Value} -> send_add_row_message(Tablet_list,Key,Value),
-								 loop(Tablet_list,Master_Name,Master_Node);
-		{queryW, Function} -> send_queryW_message(Tablet_list,Function),
-							  loop(Tablet_list,Master_Name,Master_Node);
-		{queryR, Function} -> send_queryR_message(Tablet_list,Function),
-							  loop(Tablet_list,Master_Name,Master_Node)
-%		{result, NewValue} -> io:format(NewValue),
-%							  loop(Tablet_list, Master_Name, Master_Node).
-%
+get_row(MasterServerPid, Key) ->
+	Tablets = gen_server:call(MasterServerPid,{get_tablets}),
+	util:parallel_map(fun(T) ->
+		Results = gen_server:call(T, {update_row, Key, Value}),
+		case Results of
+			{no_match} -> [];
+			_ -> [Results]
+		end
+	end, Tablets),
+	case lists:merge(Results) of
+		[First | _] -> First;
+		_ -> no_match
 	end.
 
-
-	
+filter(Master, Function) ->
+	Tablets = gen_server:call(MasterServerPid,{get_tablets}),
+	Resuls = util:parallel_map(fun(T)) ->
+		Result = gen_server:call(T, {filter, Function})
+	end, Tablets),
+	lists:merge(Results).
