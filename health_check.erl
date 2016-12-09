@@ -4,7 +4,7 @@
 -export([run/2]).
 
 run(Master, Copies) ->
-	% Ask the master who the tablets are.
+	io:format("Starting health check...~n"),
 	Tablets = gen_server:call(Master, {get_tablets}),
 	Problems = lists:flatten(find_problems(Tablets, Copies)),
 	UniqueProblems = sets:to_list(sets:from_list(Problems)),

@@ -13,7 +13,7 @@ TabletName = list_to_atom(TabletNameString).
 Tablet = tablet_server:start(TabletName).
 
 
-Master = rpc:call(MasterNode, erlang, whereis, [MasterName]).
+Master = master_server:find_master(MasterNode, MasterName).
 
 gen_server:cast(Master, {add_tablet, Tablet}).
 

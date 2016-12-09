@@ -45,5 +45,6 @@ gen_server:cast(T2, {update_row, "Hello", 42}).
 timer:sleep(1000).
 health_check:run(Master, 3).
 
+
 tablet_server:stop(T2).
 tablet_server:stop(T3).
