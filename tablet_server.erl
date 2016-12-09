@@ -10,7 +10,8 @@ start(UniqueName) ->
 	InactiveTableName = list_to_atom(atom_to_list(UniqueName) ++ atom_to_list('_inactive_table')),
 	{ok, ActiveTable} = dets:open_file(ActiveTableName, []),
 	{ok, InactiveTable} = dets:open_file(InactiveTableName, []),
-	gen_server:start(tablet_server, {ActiveTable,  InactiveTable}, []).
+	{ok, T} = gen_server:start(tablet_server, {ActiveTable,  InactiveTable}, []),
+	T.
 
 stop(Pid) ->
 	gen_server:stop(Pid).

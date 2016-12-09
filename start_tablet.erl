@@ -1,5 +1,5 @@
 
-erlang:set_cookie(node(), magic).
+% erlang:set_cookie(node(), magic).
 
 
 {ok, [[MasterNameString]]} = init:get_argument(master_name).
@@ -12,7 +12,8 @@ TabletName = list_to_atom(TabletNameString).
 
 Tablet = tablet_server:start(TabletName).
 
-Tablet = rpc:call(MasterNode, erlang, whereis, [MasterName]).
+
+Master = rpc:call(MasterNode, erlang, whereis, [MasterName]).
 
 gen_server:cast(Master, {add_tablet, Tablet}).
 

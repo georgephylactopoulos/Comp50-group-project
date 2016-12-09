@@ -8,9 +8,9 @@ c(util).
 
 
 
-{ok, Tablet1} = tablet_server:start(unique_name1).
-{ok, Tablet2} = tablet_server:start(unique_name2).
-{ok, Tablet3} = tablet_server:start(unique_name3).
+Tablet1 = tablet_server:start(unique_name1).
+Tablet2 = tablet_server:start(unique_name2).
+Tablet3 = tablet_server:start(unique_name3).
 
 Master = master_server:start(master_name).
 

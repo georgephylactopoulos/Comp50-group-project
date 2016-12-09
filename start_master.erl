@@ -1,5 +1,7 @@
 
-erlang:set_cookie(node(), magic).
+% erlang:set_cookie(node(), magic).
+
+c(master_server).
 
 {ok, [[MasterNameString]]} = init:get_argument(master_name).
 

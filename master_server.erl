@@ -1,7 +1,7 @@
 -module(master_server).
 
 -export([start/1, stop/1]).
--export([add_tablet/2,delete_tablet/2,print_tablet_list/1]).
+-export([add_tablet/2,delete_tablet/2,print_tablet_list/1, find_master/2]).
 -export([init/1, handle_call/3, handle_cast/2]).
 -behaviour(gen_server).
 
@@ -13,6 +13,9 @@ start(Name) ->
 
 stop(Pid) ->
 	gen_server:stop(Pid).
+
+find_master(MasterNode, MasterName) ->
+	rpc:call(MasterNode, erlang, whereis, [MasterName]).
 
 add_tablet(Pid, Tablet) ->
 	gen_server:cast(Pid,{add_tablet, Tablet}).

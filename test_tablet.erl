@@ -1,5 +1,5 @@
 c(tablet_server).
-{ok, T} = tablet_server:start(unique_name).
+T = tablet_server:start(unique_name).
 
 gen_server:cast(T, {add_row, "Hello", "World"}).
 gen_server:cast(T, {add_row, "SecondRow", "SecondVal"}).
