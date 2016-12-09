@@ -20,10 +20,6 @@ gen_server:cast(Tablet1, {clear_everything}).
 gen_server:cast(Tablet2, {clear_everything}).
 gen_server:cast(Tablet3, {clear_everything}).
 
-% Master ! {add_tablet, Tablet1}.
-% Master ! {add_tablet, Tablet2}.
-% Master ! {update_clients}.
-
 gen_server:cast(Master, {add_tablet, Tablet1}).
 gen_server:cast(Master, {add_tablet, Tablet2}).
 gen_server:cast(Master, {add_tablet, Tablet3}).
@@ -32,7 +28,6 @@ client:add_row(Master, "Hello", "world").
 
 timer:sleep(1000).
 
-% gen_server:call(Tablet1, {get_row, "Hello"}).
 client:get_row(Master, "Hello").
 client:get_row(Master, "does not exist").
 
