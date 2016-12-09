@@ -23,7 +23,7 @@ add_tablet(Pid, Tablet) ->
 delete_tablet(Pid, Tablet) -> 
 	gen_server:cast(Pid, {delete_tablet, Tablet}).
 
-%%for debugging purposes
+% for debugging purposes
 print_tablet_list(Pid) -> 
 	gen_server:cast(Pid, {print_tablet_list}).
 
@@ -51,7 +51,7 @@ handle_cast({print_tablet_list}, Tablets) ->
 handle_call({get_tablets}, _Sender, Tablets) ->
 	{reply, Tablets, Tablets}.
 
-%%for debugging purposes
+% for debugging purposes
 print_list_helper([]) -> [];
 print_list_helper([H|T]) -> io:format("printing: ~p~n", [H]),
 						    print_list_helper(T).

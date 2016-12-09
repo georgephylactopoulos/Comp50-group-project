@@ -1,5 +1,4 @@
 
-% erlang:set_cookie(node(), magic).
 
 c(master_server).
 
