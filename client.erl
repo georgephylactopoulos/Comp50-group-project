@@ -12,7 +12,7 @@ add_row(MasterServerPid, Key, Value) ->
 % a tablet at random and sends it an add_row command.
 % Random selection should provide more even load 
 % balancing.
-send_add_row_message([], Key, Value) -> no_tablets;
+send_add_row_message([], _Key, _Value) -> no_tablets;
 send_add_row_message(Tablets, Key, Value) ->
 	TabletListLength = length(Tablets),
 	Index = rand:uniform(TabletListLength),
@@ -66,6 +66,6 @@ get_row(MasterServerPid, Key) ->
 filter(Master, Function) ->
 	Tablets = gen_server:call(Master, {get_tablets}),
 	Results = util:parallel_map(fun(T) ->
-		Result = gen_server:call(T, {filter, Function})
+		gen_server:call(T, {filter, Function})
 	end, Tablets),
 	lists:merge(Results).
